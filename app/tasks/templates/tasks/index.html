@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Django Task Manager</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+        }
+        .box {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            margin: 50px auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px;
+            background: blue;
+            color: white;
+            border: none;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .task {
+            background: #eee;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete {
+            background: red;
+        }
+    </style>
+</head>
+
+<body>
+<div class="box">
+    <h2>Django Task Manager</h2>
+
+    <input id="title" placeholder="Task title">
+    <textarea id="description" placeholder="Description"></textarea>
+    <button onclick="addTask()">Add Task</button>
+
+    <div id="taskList"></div>
+</div>
+
+<script>
+const api = "/api/tasks/";
+
+function getCSRF() {
+    return document.cookie.split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+}
+
+function loadTasks(){
+    fetch(api)
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+        data.forEach(task => {
+            html += `
+            <div class="task">
+                <div>
+                    <b>${task.title}</b><br>
+                    ${task.description}
+                </div>
+                <button class="delete" onclick="deleteTask(${task.id})">Delete</button>
+            </div>`;
+        });
+        document.getElementById("taskList").innerHTML = html;
+    });
+}
+
+function addTask(){
+    fetch(api,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken": getCSRF()
+        },
+        body:JSON.stringify({
+            title:document.getElementById("title").value,
+            description:document.getElementById("description").value
+        })
+    }).then(()=>loadTasks());
+}
+
+function deleteTask(id){
+    fetch("/api/tasks/" + id + "/",{
+
+        method:"DELETE",
+        headers:{
+            "X-CSRFToken": getCSRF()
+        }
+    }).then(()=>loadTasks());
+}
+
+loadTasks();
+</script>
+
+</body>
+</html>
